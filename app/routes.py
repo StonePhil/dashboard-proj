@@ -2,7 +2,11 @@ from flask import Blueprint, render_template, request, redirect, session, url_fo
 from datetime import datetime
 from app.fake_data import generate_event
 import time
+import sqlite3
+import os
 
+DB_PATH = os.path.join(os.getcwd(), "soc_logs.db")
+ACTIVE_TABLE = None
 EVENT_STORE = []
 PAUSED = False
 LAST_EVENT_TIME = 0
@@ -12,6 +16,98 @@ main = Blueprint("main", __name__)
 # simple simulated credentials
 VALID_USER = "admin"
 VALID_PASS = "admin"
+
+
+def get_db_connection():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def create_new_table():
+    global ACTIVE_TABLE
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Determine next table number
+    cur.execute("""
+        SELECT name FROM sqlite_master
+        WHERE type='table' AND name LIKE 'table%'
+    """)
+    existing = cur.fetchall()
+
+    table_number = len(existing) + 1
+    table_name = f"table{table_number}"
+
+    cur.execute(f"""
+        CREATE TABLE {table_name} (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            user TEXT,
+            source TEXT,
+            event_type TEXT,
+            level INTEGER,
+            severity TEXT,
+            status TEXT
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+    ACTIVE_TABLE = table_name
+    return table_name
+
+
+def get_existing_tables():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT name FROM sqlite_master
+        WHERE type='table' AND name LIKE 'table%'
+    """)
+    tables = [row[0] for row in cur.fetchall()]
+    conn.close()
+    return tables
+
+
+def insert_event(table_name, event):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(f"""
+        INSERT INTO {table_name}
+        (timestamp, user, source, event_type, level, severity, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        event["timestamp"],
+        event["user"],
+        event["source"],
+        event["type"],
+        event["level"],
+        event["severity"],
+        event["status"]
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def fetch_events(table_name):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(f"""
+        SELECT * FROM {table_name}
+        ORDER BY id DESC
+    """)
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return rows
+
 
 
 import random
@@ -82,66 +178,47 @@ def login():
 
 @main.route("/dashboard")
 def dashboard():
-    global PAUSED, LAST_EVENT_TIME
+    global ACTIVE_TABLE
 
     if "user" not in session:
         return redirect(url_for("main.login"))
 
-    query = request.args.get("q", "").strip()
-    reset_flag = request.args.get("reset")
     action = request.args.get("action")
 
-    # Handle pause / continue
-    if action == "pause":
-        PAUSED = True
-    elif action == "continue":
-        PAUSED = False
+    # Handle New
+    if action == "new":
+        create_new_table()
 
-    # Proper reset (no event generation)
-    if reset_flag:
-        return redirect(url_for("main.dashboard"))
+    # Handle Open
+    elif action and action.startswith("open:"):
+        ACTIVE_TABLE = action.split(":")[1]
 
-    now = time.time()
+    # If no active table yet, render empty dashboard
+    if not ACTIVE_TABLE:
+        tables = get_existing_tables()
+        return render_template(
+            "dashboard.html",
+            user=session["user"],
+            tables=tables,
+            events=[],
+            active_table=None,
+            total_logs=0
+        )
 
-    # Only generate event if:
-    # - not paused
-    # - not filtering
-    # - random time interval passed
-    if not PAUSED and not query:
+    # Generate event
+    event = generate_event()
+    insert_event(ACTIVE_TABLE, event)
 
-        interval = random_spawn_interval()
-
-        if now - LAST_EVENT_TIME > interval:
-            EVENT_STORE.append(generate_event())
-            LAST_EVENT_TIME = now
-
-    # Assign event index
-    for i, event in enumerate(EVENT_STORE, start=1):
-        event["index"] = i
-
-    # Newest first
-    events = list(reversed(EVENT_STORE))
-
-    # Filtering
-    if query:
-        events = apply_query_filter(events, query)
-
-    summary = {
-        "critical": sum(1 for e in EVENT_STORE if e["level"] == 4),
-        "high": sum(1 for e in EVENT_STORE if e["level"] == 3),
-        "total": len(EVENT_STORE),
-        "analysts": 3
-    }
+    # Fetch events from DB
+    events = fetch_events(ACTIVE_TABLE)
 
     return render_template(
         "dashboard.html",
         user=session["user"],
-        current_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        summary=summary,
         events=events,
-        query=query,
-        paused=PAUSED,
-        total_logs=len(EVENT_STORE)
+        active_table=ACTIVE_TABLE,
+        tables=get_existing_tables(),
+        total_logs=len(events)
     )
 
 

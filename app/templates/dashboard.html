@@ -2,45 +2,51 @@
 <html>
 <head>
     <title>security operations center dashboard</title>
-    <meta http-equiv="refresh" content="10">
 </head>
 
 <body style="background:#0b0b0b; color:#00FF00; font-family:monospace; margin:0;">
+
+<!-- HEADER -->
 
 <div style="background:#111; border-bottom:1px solid #00FF00; padding:6px;">
     <span><b>security operations center</b></span>
     <span style="float:right;">
         operator: {{ user }} |
-        {{ current_time }} |
         <a href="/logout" style="color:#00FF00; text-decoration:none;">logout</a>
     </span>
 </div>
 
+<!-- TABLE CONTROLS -->
+
 <div style="padding:6px; border-bottom:1px solid #00FF00; background:#0f0f0f;">
 
 <form method="GET" action="/dashboard" style="display:inline;">
-    <input type="text" name="q"
-        value="{{ query }}"
-        placeholder="user == user12 && level == 4"
-        style="background:black; color:#00FF00; border:1px solid #00FF00; font-family:monospace; width:500px;">
-
-    <input type="submit" value="[ apply ]"
-        style="background:black; color:#00FF00; border:1px solid #00FF00; font-family:monospace;">
+    <input type="hidden" name="action" value="new">
+    <input type="submit" value="[ new ]"
+        style="background:black; color:#00FF00; border:1px solid #00FF00; cursor:pointer;">
 </form>
 
+{% for t in tables %}
 <form method="GET" action="/dashboard" style="display:inline;">
-    <input type="hidden" name="reset" value="1">
-    <input type="submit" value="[ reset ]"
-        style="background:black; color:#00FF00; border:1px solid #00FF00; font-family:monospace;">
+    <input type="hidden" name="action" value="open:{{ t }}">
+    <input type="submit" value="[ open {{ t }} ]"
+        style="background:black; color:#00FF00; border:1px solid #00FF00; cursor:pointer;">
 </form>
-
-<form method="GET" action="/dashboard" style="display:inline;">
-    <input type="hidden" name="action" value="{{ 'continue' if paused else 'pause' }}">
-    <input type="submit" value="[ {{ 'continue' if paused else 'pause' }} ]"
-        style="background:black; color:#00FF00; border:1px solid #00FF00; font-family:monospace;">
-</form>
+{% endfor %}
 
 </div>
+
+<!-- ACTIVE TABLE INFO -->
+
+<div style="padding:6px; border-bottom:1px solid #00FF00;">
+    {% if active_table %}
+        active table: <b>{{ active_table }}</b>
+    {% else %}
+        no active table — create or open one
+    {% endif %}
+</div>
+
+<!-- EVENTS PANEL -->
 
 <div style="height:450px; overflow-y:scroll; border-bottom:1px solid #00FF00; background:#000;">
 
@@ -48,10 +54,10 @@
        style="border-collapse:collapse; font-size:13px;">
 
 <tr style="background:#111; border-bottom:1px solid #00FF00;">
-    <td width="5%">#</td>
+    <td width="6%">id</td>
     <td width="16%">timestamp</td>
     <td width="10%">user</td>
-    <td width="15%">source</td>
+    <td width="14%">source</td>
     <td width="20%">event</td>
     <td width="6%">lvl</td>
     <td width="14%">severity</td>
@@ -63,23 +69,41 @@
     onmouseover="this.style.background='#111';"
     onmouseout="this.style.background='transparent';">
 
-    <td>{{ event.index }}</td>
-    <td>{{ event.timestamp }}</td>
-    <td>{{ event.user }}</td>
-    <td>{{ event.source }}</td>
-    <td>{{ event.type }}</td>
-    <td>{{ event.level }}</td>
-    <td style="background-color:{{ event.color }}; color:black;">
-    <b>{{ event.severity }}</b>
+    <td>{{ event["id"] }}</td>
+    <td>{{ event["timestamp"] }}</td>
+    <td>{{ event["user"] }}</td>
+    <td>{{ event["source"] }}</td>
+    <td>{{ event["event_type"] }}</td>
+    <td>{{ event["level"] }}</td>
+
+    <td style="
+        {% if event['level'] == 4 %}
+            background:#FF0000; color:black;
+        {% elif event['level'] == 3 %}
+            background:#FFA500; color:black;
+        {% elif event['level'] == 2 %}
+            background:#FFFF00; color:black;
+        {% elif event['level'] == 1 %}
+            background:#00FF00; color:black;
+        {% else %}
+            background:#888888; color:black;
+        {% endif %}
+    ">
+        <b>{{ event["severity"] }}</b>
     </td>
-    <td>{{ event.status }}</td>
+
+    <td>{{ event["status"] }}</td>
 </tr>
 {% endfor %}
 
 </table>
 </div>
+
+<!-- TOTAL LOG COUNTER -->
+
 <div style="padding:6px; border-top:1px solid #00FF00;">
     total logs: {{ total_logs }}
 </div>
+
 </body>
 </html>
