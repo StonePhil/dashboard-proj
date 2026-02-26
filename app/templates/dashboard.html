@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>security operations center dashboard</title>
+    <meta http-equiv="refresh" content="10">
+</head>
+
+<body style="background:#0b0b0b; color:#00FF00; font-family:monospace; margin:0;">
+
+<div style="background:#111; border-bottom:1px solid #00FF00; padding:6px;">
+    <span><b>security operations center</b></span>
+    <span style="float:right;">
+        operator: {{ user }} |
+        {{ current_time }} |
+        <a href="/logout" style="color:#00FF00; text-decoration:none;">logout</a>
+    </span>
+</div>
+
+<div style="padding:6px; border-bottom:1px solid #00FF00; background:#0f0f0f;">
+
+<form method="GET" action="/dashboard" style="display:inline;">
+    <input type="text" name="q"
+        value="{{ query }}"
+        placeholder="user == user12 && level == 4"
+        style="background:black; color:#00FF00; border:1px solid #00FF00; font-family:monospace; width:500px;">
+
+    <input type="submit" value="[ apply ]"
+        style="background:black; color:#00FF00; border:1px solid #00FF00; font-family:monospace;">
+</form>
+
+<form method="GET" action="/dashboard" style="display:inline;">
+    <input type="hidden" name="reset" value="1">
+    <input type="submit" value="[ reset ]"
+        style="background:black; color:#00FF00; border:1px solid #00FF00; font-family:monospace;">
+</form>
+
+<form method="GET" action="/dashboard" style="display:inline;">
+    <input type="hidden" name="action" value="{{ 'continue' if paused else 'pause' }}">
+    <input type="submit" value="[ {{ 'continue' if paused else 'pause' }} ]"
+        style="background:black; color:#00FF00; border:1px solid #00FF00; font-family:monospace;">
+</form>
+
+</div>
+
+<div style="height:450px; overflow-y:scroll; border-bottom:1px solid #00FF00; background:#000;">
+
+<table width="100%" cellpadding="4" cellspacing="0"
+       style="border-collapse:collapse; font-size:13px;">
+
+<tr style="background:#111; border-bottom:1px solid #00FF00;">
+    <td width="5%">#</td>
+    <td width="16%">timestamp</td>
+    <td width="10%">user</td>
+    <td width="15%">source</td>
+    <td width="20%">event</td>
+    <td width="6%">lvl</td>
+    <td width="14%">severity</td>
+    <td width="14%">status</td>
+</tr>
+
+{% for event in events %}
+<tr style="border-bottom:1px solid #111;"
+    onmouseover="this.style.background='#111';"
+    onmouseout="this.style.background='transparent';">
+
+    <td>{{ event.index }}</td>
+    <td>{{ event.timestamp }}</td>
+    <td>{{ event.user }}</td>
+    <td>{{ event.source }}</td>
+    <td>{{ event.type }}</td>
+    <td>{{ event.level }}</td>
+    <td style="background-color:{{ event.color }}; color:black;">
+    <b>{{ event.severity }}</b>
+    </td>
+    <td>{{ event.status }}</td>
+</tr>
+{% endfor %}
+
+</table>
+</div>
+<div style="padding:6px; border-top:1px solid #00FF00;">
+    total logs: {{ total_logs }}
+</div>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>security operations center dashboard</title>
+</head>
+
+<body style="background:black; color:#00FF00; font-family:monospace;">
+
+<center>
+    <h2>security operations center dashboard</h2>
+    <p>authentication required</p>
+</center>
+
+<br>
+
+<form method="POST" autocomplete="off">
+    <table align="center" cellpadding="5">
+        <tr>
+            <td>username:</td>
+            <td>
+                <input type="text" name="username" required
+                    style="background:black; color:#00FF00; border:1px solid #00FF00; font-family:monospace;">
+            </td>
+        </tr>
+        <tr>
+            <td>password:</td>
+            <td>
+                <input type="password" name="password" required
+                    style="background:black; color:#00FF00; border:1px solid #00FF00; font-family:monospace;">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" align="center">
+                <br>
+                <input type="submit" value="[ initiate session ]"
+                    style="background:black; color:#00FF00; border:1px solid #00FF00; font-family:monospace; cursor:pointer;">
+            </td>
+        </tr>
+    </table>
+</form>
+
+<br>
+
+<center>
+<pre style="color:#FF4444; min-height:20px;">
+{{ message }}
+</pre>
+</center>
+
+<br>
+
+<center>
+<small>
+access restricted • activity monitored • authorized personnel only
+</small>
+</center>
+
+</body>
+</html>
