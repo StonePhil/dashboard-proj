@@ -3,11 +3,9 @@
 <head>
     <title>security operations center dashboard</title>
 </head>
-
 <body style="background:#0b0b0b; color:#00FF00; font-family:monospace; margin:0;">
 
 <!-- HEADER -->
-
 <div style="background:#111; border-bottom:1px solid #00FF00; padding:6px;">
     <span><b>security operations center</b></span>
     <span style="float:right;">
@@ -16,94 +14,159 @@
     </span>
 </div>
 
-<!-- TABLE CONTROLS -->
-
+<!-- CONTROLS -->
 <div style="padding:6px; border-bottom:1px solid #00FF00; background:#0f0f0f;">
+    <form method="GET" action="/dashboard" style="display:inline;">
+        <input type="hidden" name="action" value="open">
+        <input type="submit" value="[ open ]"
+            {% if active_table %}
+                disabled
+                style="background:#333; color:#666; border:1px solid #666;"
+            {% else %}
+                style="background:black; color:#00FF00; border:1px solid #00FF00;"
+            {% endif %}
+        >
+    </form>
 
-<form method="GET" action="/dashboard" style="display:inline;">
-    <input type="hidden" name="action" value="new">
-    <input type="submit" value="[ new ]"
-        style="background:black; color:#00FF00; border:1px solid #00FF00; cursor:pointer;">
-</form>
+    <form method="GET" action="/dashboard" style="display:inline;">
+        <input type="hidden" name="action" value="new">
+        <input type="submit" value="[ new ]"
+            style="background:black; color:#00FF00; border:1px solid #00FF00;">
+    </form>
 
-{% for t in tables %}
-<form method="GET" action="/dashboard" style="display:inline;">
-    <input type="hidden" name="action" value="open:{{ t }}">
-    <input type="submit" value="[ open {{ t }} ]"
-        style="background:black; color:#00FF00; border:1px solid #00FF00; cursor:pointer;">
-</form>
-{% endfor %}
-
+    <form method="GET" action="/dashboard" style="display:inline;">
+        <input type="hidden" name="action" value="remove">
+        <input type="submit" value="[ remove ]"
+            style="background:black; color:#FF4444; border:1px solid #FF4444;">
+    </form>
 </div>
 
-<!-- ACTIVE TABLE INFO -->
+<!-- TABLE TABS -->
+<div style="padding:6px; border-bottom:1px solid #00FF00; background:#111;">
+    {% for t in tables %}
+    <form method="GET" action="/dashboard" style="display:inline;">
+        <input type="hidden" name="action" value="switch:{{ t }}">
+        <input type="submit"
+            value="[ {{ t }} ]"
+            {% if t == active_table %}
+                style="background:#00FF00; color:black; border:1px solid #00FF00;"
+            {% else %}
+                style="background:black; color:#00FF00; border:1px solid #00FF00;"
+            {% endif %}
+        >
+    </form>
+    {% endfor %}
+</div>
 
+<!-- ACTIVE TABLE -->
 <div style="padding:6px; border-bottom:1px solid #00FF00;">
     {% if active_table %}
         active table: <b>{{ active_table }}</b>
     {% else %}
-        no active table — create or open one
+        no table mounted
     {% endif %}
 </div>
 
-<!-- EVENTS PANEL -->
+<!-- EVENTS -->
+<div style="height:450px; overflow-y:scroll; border-bottom:1px solid #00FF00; background:#000; position:relative;">
+    <table id="events-table" width="100%" cellpadding="4" cellspacing="0"
+           style="border-collapse:collapse; font-size:13px; table-layout:fixed; width:100%;">
 
-<div style="height:450px; overflow-y:scroll; border-bottom:1px solid #00FF00; background:#000;">
+        <thead>
+            <tr style="
+                background:#111;
+                border-bottom:1px solid #00FF00;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            ">
+                <td width="6%">id</td>
+                <td width="16%">timestamp</td>
+                <td width="10%">user</td>
+                <td width="14%">source</td>
+                <td width="20%">event</td>
+                <td width="6%">lvl</td>
+                <td width="14%">severity</td>
+                <td width="14%">status</td>
+            </tr>
+        </thead>
 
-<table width="100%" cellpadding="4" cellspacing="0"
-       style="border-collapse:collapse; font-size:13px;">
-
-<tr style="background:#111; border-bottom:1px solid #00FF00;">
-    <td width="6%">id</td>
-    <td width="16%">timestamp</td>
-    <td width="10%">user</td>
-    <td width="14%">source</td>
-    <td width="20%">event</td>
-    <td width="6%">lvl</td>
-    <td width="14%">severity</td>
-    <td width="14%">status</td>
-</tr>
-
-{% for event in events %}
-<tr style="border-bottom:1px solid #111;"
-    onmouseover="this.style.background='#111';"
-    onmouseout="this.style.background='transparent';">
-
-    <td>{{ event["id"] }}</td>
-    <td>{{ event["timestamp"] }}</td>
-    <td>{{ event["user"] }}</td>
-    <td>{{ event["source"] }}</td>
-    <td>{{ event["event_type"] }}</td>
-    <td>{{ event["level"] }}</td>
-
-    <td style="
-        {% if event['level'] == 4 %}
-            background:#FF0000; color:black;
-        {% elif event['level'] == 3 %}
-            background:#FFA500; color:black;
-        {% elif event['level'] == 2 %}
-            background:#FFFF00; color:black;
-        {% elif event['level'] == 1 %}
-            background:#00FF00; color:black;
-        {% else %}
-            background:#888888; color:black;
-        {% endif %}
-    ">
-        <b>{{ event["severity"] }}</b>
-    </td>
-
-    <td>{{ event["status"] }}</td>
-</tr>
-{% endfor %}
-
-</table>
+        <tbody>
+            {% for event in events %}
+            <tr style="border-bottom:1px solid #111;"
+                onmouseover="this.style.background='#111';"
+                onmouseout="this.style.background='transparent';">
+                <td>{{ event["id"] }}</td>
+                <td>{{ event["timestamp"] }}</td>
+                <td>{{ event["user"] }}</td>
+                <td>{{ event["source"] }}</td>
+                <td>{{ event["event_type"] }}</td>
+                <td>{{ event["level"] }}</td>
+                <td style="
+                    {% if event.severity == 'critical' %}   background:#FF0000; color:black;
+                    {% elif event.severity == 'high' %}     background:#FFA500; color:black;
+                    {% elif event.severity == 'medium' %}   background:#FFFF00; color:black;
+                    {% elif event.severity == 'low' %}      background:#00FF00; color:black;
+                    {% else %}                              background:#888888; color:black;
+                    {% endif %}
+                ">
+                    <b>{{ event["severity"] }}</b>
+                </td>
+                <td>{{ event["status"] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
-
-<!-- TOTAL LOG COUNTER -->
-
-<div style="padding:6px; border-top:1px solid #00FF00;">
+<!-- TOTAL LOGS -->
+<div id="total-logs" style="padding:6px; border-top:1px solid #00FF00;">
     total logs: {{ total_logs }}
 </div>
+
+<script>
+    const eventTableBody = document.querySelector('#events-table tbody');
+
+    function pollForNewEvents() {
+        fetch('/events', { cache: 'no-store' })
+            .then(response => {
+                if (response.status === 204 || !response.ok) {
+                    return null;
+                }
+                return response.text();
+            })
+            .then(html => {
+                if (html && html.trim()) {
+                    // Insert newest row at the top
+                    eventTableBody.insertAdjacentHTML('afterbegin', html);
+
+                    // Update total logs count
+                    const totalEl = document.querySelector('#total-logs');
+                    if (totalEl) {
+                        let current = parseInt(totalEl.textContent.replace(/\D/g, '')) || 0;
+                        totalEl.textContent = `total logs: ${current + 1}`;
+                    }
+
+                    // Keep only last 300 rows visible (performance)
+                    while (eventTableBody.children.length > 300) {
+                        eventTableBody.removeChild(eventTableBody.lastChild);
+                    }
+                }
+            })
+            .catch(err => console.error('Polling error:', err))
+            .finally(() => {
+                // Next poll in random time between 2 and 5 seconds
+                const delay = (2000 + Math.random() * 3000) | 0;  // 2000–4999 ms
+                setTimeout(pollForNewEvents, delay);
+            });
+    }
+
+    // Start polling only if we have an active table
+    {% if active_table %}
+        // Small random initial delay (0.8–2.5 s) so it doesn't all hit at once
+        const initialDelay = (800 + Math.random() * 1700) | 0;
+        setTimeout(pollForNewEvents, initialDelay);
+    {% endif %}
+</script>
 
 </body>
 </html>
