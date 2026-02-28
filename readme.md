@@ -45,8 +45,8 @@ Perfect for demos, training sessions, cybersecurity awareness, or just nostalgic
 ### 1. Clone / Download the project
 
 ```bash
-git clone https://github.com/yourusername/soc-dashboard-simulator.git
-cd soc-dashboard-simulator
+git clone https://github.com/StonePhil/dashboard-proj
+cd dashboard-proj
 ```
 
 ### 2. Install dependencies
@@ -86,7 +86,7 @@ App will start at **http://127.0.0.1:5000**
 ## Project Structure
 
 ```
-soc-dashboard-simulator/
+dashboard-proj/
 ├── app/
 │   ├── __init__.py
 │   ├── routes.py
